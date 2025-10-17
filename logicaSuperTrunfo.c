@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 // Desafio Super Trunfo - Países
 // Tema 1 - Cadastro das Cartas
@@ -15,6 +16,52 @@ typedef enum {
     DENSIDADE_POPULACIONAL,
     PIB_PER_CAPITA
 } Atributo;
+
+// --- Helpers globais ---
+const char* nomeAtributo(Atributo a) {
+    switch (a) {
+        case POPULACAO: return "População";
+        case AREA: return "Área";
+        case PIB: return "PIB";
+        case DENSIDADE_POPULACIONAL: return "Densidade Populacional";
+        case PIB_PER_CAPITA: return "PIB per Capita";
+        default: return "Desconhecido";
+    }
+}
+
+double get_valor_card1(Atributo a, int populacao1, float area1, float pib1, double densi_pop1, double pib_per_capita1) {
+    switch (a) {
+        case POPULACAO: return (double) populacao1;
+        case AREA: return (double) area1;
+        case PIB: return (double) pib1;
+        case DENSIDADE_POPULACIONAL: return densi_pop1;
+        case PIB_PER_CAPITA: return pib_per_capita1;
+        default: return 0.0;
+    }
+}
+
+double get_valor_card2(Atributo a, int populacao2, float area2, float pib2, double densi_pop2, double pib_per_capita2) {
+    switch (a) {
+        case POPULACAO: return (double) populacao2;
+        case AREA: return (double) area2;
+        case PIB: return (double) pib2;
+        case DENSIDADE_POPULACIONAL: return densi_pop2;
+        case PIB_PER_CAPITA: return pib_per_capita2;
+        default: return 0.0;
+    }
+}
+
+int comparaValores(double v1, double v2) {
+    return (v1 > v2) ? 1 : ((v2 > v1) ? -1 : 0);
+}
+
+// compara considerando regra especial: para DENSIDADE_POPULACIONAL menor é melhor
+int comparaPorAtributo(Atributo a, double v1, double v2) {
+    if (a == DENSIDADE_POPULACIONAL) {
+        return (v1 < v2) ? 1 : ((v2 < v1) ? -1 : 0);
+    }
+    return comparaValores(v1, v2);
+}
 
 // Se desejar manter escolha fixa, defina FIXED_ATTRIBUTE to 1 e ajuste FIXED_CHOICE
 // Ex: #define FIXED_ATTRIBUTE 1 e #define FIXED_CHOICE PIB
@@ -111,77 +158,85 @@ int main() {
     printf("Número de Pontos Turísticos: %d\n", numero_pontos_turisticos2); 
     printf("Densidade Populacional: %.2f habitantes/km²\n", densi_pop2);
     printf("PIB per Capita: %.2f mil reais\n", pib_per_capita2);
+    
 
-    // Escolher o atributo - respeitar FIXED_ATTRIBUTE; senão permitir que o jogador escolha
-    Atributo escolhido;
+    // Agora: permitir que o jogador escolha dois atributos distintos (ou opção 0 = aleatório)
+    Atributo escolhido1, escolhido2;
     if (FIXED_ATTRIBUTE) {
-        escolhido = FIXED_CHOICE;
+        escolhido1 = FIXED_CHOICE;
+        // escolher segundo aleatório distinto
+        srand((unsigned) time(NULL));
+        do { escolhido2 = (Atributo) (rand() % 5); } while (escolhido2 == escolhido1);
+        printf("\nAtributos escolhidos automaticamente: %s e %s\n", nomeAtributo(escolhido1), nomeAtributo(escolhido2));
     } else {
-        int escolha_valida = 0;
-        int opcao = -1;
-        while (!escolha_valida) {
-            printf("\nEscolha o atributo para comparar (digite o número):\n");
-            printf("1 - População\n");
-            printf("2 - Área\n");
-            printf("3 - PIB\n");
-            printf("4 - Densidade Populacional\n");
-            printf("5 - PIB per Capita\n");
+        int opc = -1;
+        int valid = 0;
+        // primeiro atributo
+        while (!valid) {
+            printf("\nEscolha o primeiro atributo (digite o número):\n");
+            for (int i = 0; i < 5; ++i) printf("%d - %s\n", i+1, nomeAtributo((Atributo)i));
             printf("0 - Aleatório\n");
-            if (scanf(" %d", &opcao) != 1) {
-                // limpar buffer
-                int c; while ((c = getchar()) != '\n' && c != EOF) ;
-                printf("Entrada inválida. Tente novamente.\n");
-                continue;
-            }
-
-            if (opcao == 0) {
-                srand((unsigned) time(NULL));
-                escolhido = (Atributo) (rand() % 5);
-                escolha_valida = 1;
-            } else if (opcao >= 1 && opcao <= 5) {
-                escolhido = (Atributo) (opcao - 1);
-                escolha_valida = 1;
-            } else {
-                printf("Opção inválida. Escolha um número entre 0 e 5.\n");
-            }
+            if (scanf(" %d", &opc) != 1) { int c; while ((c = getchar()) != '\n' && c != EOF); printf("Entrada inválida. Tente novamente.\n"); continue; }
+            if (opc == 0) { srand((unsigned) time(NULL)); escolhido1 = (Atributo) (rand() % 5); valid = 1; }
+            else if (opc >= 1 && opc <= 5) { escolhido1 = (Atributo)(opc - 1); valid = 1; }
+            else printf("Opção inválida.\n");
         }
+
+        // segundo atributo (deve ser distinto do primeiro) - menu dinâmico usando switch para não mostrar o escolhido
+        valid = 0;
+        while (!valid) {
+            printf("\nEscolha o segundo atributo (digite o número) - deve ser diferente do primeiro:\n");
+            switch (escolhido1) {
+                case POPULACAO:
+                    printf("2 - Área\n3 - PIB\n4 - Densidade Populacional\n5 - PIB per Capita\n"); break;
+                case AREA:
+                    printf("1 - População\n3 - PIB\n4 - Densidade Populacional\n5 - PIB per Capita\n"); break;
+                case PIB:
+                    printf("1 - População\n2 - Área\n4 - Densidade Populacional\n5 - PIB per Capita\n"); break;
+                case DENSIDADE_POPULACIONAL:
+                    printf("1 - População\n2 - Área\n3 - PIB\n5 - PIB per Capita\n"); break;
+                case PIB_PER_CAPITA:
+                    printf("1 - População\n2 - Área\n3 - PIB\n4 - Densidade Populacional\n"); break;
+                default:
+                    for (int i = 0; i < 5; ++i) printf("%d - %s\n", i+1, nomeAtributo((Atributo)i));
+            }
+            printf("0 - Aleatório\n");
+            if (scanf(" %d", &opc) != 1) { int c; while ((c = getchar()) != '\n' && c != EOF); printf("Entrada inválida. Tente novamente.\n"); continue; }
+            if (opc == 0) { srand((unsigned) time(NULL)); escolhido2 = (Atributo) (rand() % 5); if (escolhido2 == escolhido1) continue; valid = 1; }
+            else if (opc >= 1 && opc <= 5) { escolhido2 = (Atributo)(opc - 1); if (escolhido2 == escolhido1) { printf("Escolha deve ser diferente do primeiro atributo.\n"); continue; } valid = 1; }
+            else printf("Opção inválida.\n");
+        }
+
+        printf("\nAtributos escolhidos: %s e %s\n", nomeAtributo(escolhido1), nomeAtributo(escolhido2));
     }
 
-    printf("\nComparando atributo escolhido: ");
-    switch (escolhido) {
-        case POPULACAO:
-            printf("População\n");
-            if (populacao1 > populacao2) printf("Carta 1 vence pela população.\n");
-            else if (populacao2 > populacao1) printf("Carta 2 vence pela população.\n");
-            else printf("Empate na população.\n");
-            break;
-        case AREA:
-            printf("Área\n");
-            if (area1 > area2) printf("Carta 1 vence pela área.\n");
-            else if (area2 > area1) printf("Carta 2 vence pela área.\n");
-            else printf("Empate na área.\n");
-            break;
-        case PIB:
-            printf("PIB\n");
-            if (pib1 > pib2) printf("Carta 1 vence pelo PIB.\n");
-            else if (pib2 > pib1) printf("Carta 2 vence pelo PIB.\n");
-            else printf("Empate no PIB.\n");
-            break;
-        case DENSIDADE_POPULACIONAL:
-            printf("Densidade Populacional\n");
-            if (densi_pop1 > densi_pop2) printf("Carta 1 vence pela densidade populacional.\n");
-            else if (densi_pop2 > densi_pop1) printf("Carta 2 vence pela densidade populacional.\n");
-            else printf("Empate na densidade populacional.\n");
-            break;
-        case PIB_PER_CAPITA:
-            printf("PIB per Capita\n");
-            if (pib_per_capita1 > pib_per_capita2) printf("Carta 1 vence pelo PIB per capita.\n");
-            else if (pib_per_capita2 > pib_per_capita1) printf("Carta 2 vence pelo PIB per capita.\n");
-            else printf("Empate no PIB per capita.\n");
-            break;
-        default:
-            printf("Atributo desconhecido.\n");
-    }
+    // Comparar individualmente (regra especial para densidade) e somar os valores
+    double v1a = get_valor_card1(escolhido1, populacao1, area1, pib1, densi_pop1, pib_per_capita1);
+    double v2a = get_valor_card2(escolhido1, populacao2, area2, pib2, densi_pop2, pib_per_capita2);
+    int r1 = comparaPorAtributo(escolhido1, v1a, v2a);
+    printf("\nComparação por atributo 1 (%s):\n", nomeAtributo(escolhido1));
+    printf("%s: %.2f\n", nome_cidade1, v1a);
+    printf("%s: %.2f\n", nome_cidade2, v2a);
+    printf("Vencedor do atributo 1: %s\n", (r1==1)?nome_cidade1:((r1==-1)?nome_cidade2:"Empate"));
+
+    double v1b = get_valor_card1(escolhido2, populacao1, area1, pib1, densi_pop1, pib_per_capita1);
+    double v2b = get_valor_card2(escolhido2, populacao2, area2, pib2, densi_pop2, pib_per_capita2);
+    int r2 = comparaPorAtributo(escolhido2, v1b, v2b);
+    printf("\nComparação por atributo 2 (%s):\n", nomeAtributo(escolhido2));
+    printf("%s: %.2f\n", nome_cidade1, v1b);
+    printf("%s: %.2f\n", nome_cidade2, v2b);
+    printf("Vencedor do atributo 2: %s\n", (r2==1)?nome_cidade1:((r2==-1)?nome_cidade2:"Empate"));
+
+    // Soma dos atributos (valores numéricos) - maior soma vence
+    double soma1 = v1a + v1b;
+    double soma2 = v2a + v2b;
+    printf("\nSoma dos atributos:\n");
+    printf("%s: %.2f\n", nome_cidade1, soma1);
+    printf("%s: %.2f\n", nome_cidade2, soma2);
+
+    if (soma1 > soma2) printf("\nResultado: %s vence pela maior soma.\n", nome_cidade1);
+    else if (soma2 > soma1) printf("\nResultado: %s vence pela maior soma.\n", nome_cidade2);
+    else printf("\nEmpate!\n");
 
     return 0;
 }
