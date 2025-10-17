@@ -1,5 +1,7 @@
 //Nivel Mestre
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 // Desafio Super Trunfo - Países
 // Tema 1 - Cadastro das Cartas
@@ -14,9 +16,11 @@ typedef enum {
     PIB_PER_CAPITA
 } Atributo;
 
-// Escolha fixa do atributo para comparação (mudar aqui para comparar outro atributo)
-// Opções: POPULACAO, AREA, PIB, DENSIDADE_POPULACIONAL, PIB_PER_CAPITA
-#define ATTRIBUTE_CHOICE DENSIDADE_POPULACIONAL
+// Se desejar manter escolha fixa, defina FIXED_ATTRIBUTE to 1 e ajuste FIXED_CHOICE
+// Ex: #define FIXED_ATTRIBUTE 1 e #define FIXED_CHOICE PIB
+// Caso contrário, o atributo será escolhido aleatoriamente em tempo de execução.
+#define FIXED_ATTRIBUTE 0
+#define FIXED_CHOICE DENSIDADE_POPULACIONAL
 
 int main() {
     // Variáveis separadas para cada atributo da cidade.
@@ -68,6 +72,16 @@ int main() {
     printf("Digite o número de pontos turísticos da cidade (número inteiro):\n");
     scanf("%d", &numero_pontos_turisticos2); 
 
+    // Checagens básicas para evitar divisão por zero
+    if (area1 <= 0.0f || area2 <= 0.0f) {
+        printf("Erro: área deve ser maior que 0 para calcular densidade.\n");
+        return 1;
+    }
+    if (populacao1 <= 0 || populacao2 <= 0) {
+        printf("Erro: população deve ser maior que 0 para calcular PIB per capita.\n");
+        return 1;
+    }
+
     // Calcular densidade e PIB per capita para uso posterior
     densi_pop1 = populacao1 / area1;
     densi_pop2 = populacao2 / area2;
@@ -98,9 +112,17 @@ int main() {
     printf("Densidade Populacional: %.2f habitantes/km²\n", densi_pop2);
     printf("PIB per Capita: %.2f mil reais\n", pib_per_capita2);
 
-    // Comparar apenas o atributo escolhido em código
-    printf("\nComparando atributo fixo definido em código: ");
-    switch (ATTRIBUTE_CHOICE) {
+    // Escolher o atributo - fixo via macro ou aleatório em tempo de execução
+    Atributo escolhido;
+    if (FIXED_ATTRIBUTE) {
+        escolhido = FIXED_CHOICE;
+    } else {
+        srand((unsigned) time(NULL));
+        escolhido = (Atributo) (rand() % 5); // 5 atributos
+    }
+
+    printf("\nComparando atributo escolhido: ");
+    switch (escolhido) {
         case POPULACAO:
             printf("População\n");
             if (populacao1 > populacao2) printf("Carta 1 vence pela população.\n");
