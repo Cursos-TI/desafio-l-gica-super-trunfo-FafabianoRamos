@@ -112,13 +112,39 @@ int main() {
     printf("Densidade Populacional: %.2f habitantes/km²\n", densi_pop2);
     printf("PIB per Capita: %.2f mil reais\n", pib_per_capita2);
 
-    // Escolher o atributo - fixo via macro ou aleatório em tempo de execução
+    // Escolher o atributo - respeitar FIXED_ATTRIBUTE; senão permitir que o jogador escolha
     Atributo escolhido;
     if (FIXED_ATTRIBUTE) {
         escolhido = FIXED_CHOICE;
     } else {
-        srand((unsigned) time(NULL));
-        escolhido = (Atributo) (rand() % 5); // 5 atributos
+        int escolha_valida = 0;
+        int opcao = -1;
+        while (!escolha_valida) {
+            printf("\nEscolha o atributo para comparar (digite o número):\n");
+            printf("1 - População\n");
+            printf("2 - Área\n");
+            printf("3 - PIB\n");
+            printf("4 - Densidade Populacional\n");
+            printf("5 - PIB per Capita\n");
+            printf("0 - Aleatório\n");
+            if (scanf(" %d", &opcao) != 1) {
+                // limpar buffer
+                int c; while ((c = getchar()) != '\n' && c != EOF) ;
+                printf("Entrada inválida. Tente novamente.\n");
+                continue;
+            }
+
+            if (opcao == 0) {
+                srand((unsigned) time(NULL));
+                escolhido = (Atributo) (rand() % 5);
+                escolha_valida = 1;
+            } else if (opcao >= 1 && opcao <= 5) {
+                escolhido = (Atributo) (opcao - 1);
+                escolha_valida = 1;
+            } else {
+                printf("Opção inválida. Escolha um número entre 0 e 5.\n");
+            }
+        }
     }
 
     printf("\nComparando atributo escolhido: ");
